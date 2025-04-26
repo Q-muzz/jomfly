@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cuaca Semasa</title>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #c3ecf5, #f7f9fc);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+      padding: 20px;
+    }
+    .weather-card {
+      background: white;
+      padding: 30px 20px;
+      border-radius: 20px;
+      box-shadow: 0px 8px 16px rgba(0,0,0,0.1);
+      text-align: center;
+      max-width: 320px;
+      width: 100%;
+    }
+    .city {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    .temperature {
+      font-size: 48px;
+      font-weight: bold;
+      color: #3498db;
+      margin: 10px 0;
+    }
+    .description {
+      font-size: 18px;
+      color: #555;
+      margin-top: 10px;
+    }
+    .weather-icon {
+      font-size: 60px;
+      margin-top: 10px;
+    }
+    .loading {
+      font-size: 20px;
+      color: #888;
+    }
+    @media (max-width: 400px) {
+      .weather-card {
+        padding: 20px 15px;
+      }
+      .city {
+        font-size: 20px;
+      }
+      .temperature {
+        font-size: 40px;
+      }
+      .description {
+        font-size: 16px;
+      }
+      .weather-icon {
+        font-size: 50px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="weather-card">
+  <div id="weather" class="loading">Memuatkan cuaca...</div>
+</div>
+
+<script>
+const apiKey = 'YOUR_ACCUWEATHER_API_KEY'; // <-- Ganti dengan API Key anda
+
+// Padankan weatherText dengan ikon emoji
+function getWeatherIcon(weatherText) {
+  const text = weatherText.toLowerCase();
+  if (text.includes('sun') || text.includes('clear')) return '☀️';
+  if (text.includes('cloud')) return '☁️';
+  if (text.includes('rain')) return '🌧️';
+  if (text.includes('snow')) return '❄️';
+  if (text.includes('thunder')) return '⛈️';
+  if (text.includes('fog') || text.includes('mist')) return '🌫️';
+  return '🌡️'; // Default icon
+}
+
+function getWeather(lat, lon) {
+  // Cari Location Key
+  fetch(`https://dataservice.accuweather.com/locations/v1/cities/geoposition/search?apikey=${apiKey}&q=${lat},${lon}`)
+    .then(response => response.json())
+    .then(locationData => {
+      const locationKey = locationData.Key;
+      const cityName = locationData.LocalizedName;
+
+      // Dapatkan Current Conditions
+      fetch(`https://dataservice.accuweather.com/currentconditions/v1/${locationKey}?apikey=${apiKey}&details=true`)
+        .then(response => response.json())
+        .then(weatherData => {
+          const temp = weatherData[0].Temperature.Metric.Value;
+          const weatherText = weatherData[0].WeatherText;
+          const icon = getWeatherIcon(weatherText);
+          document.getElementById('weather').innerHTML = `
+            <div class="city">${cityName}</div>
+            <div class="weather-icon">${icon}</div>
+            <div class="temperature">${temp}°C</div>
+            <div class="description">${weatherText}</div>
+          `;
+        });
+    })
+    .catch(error => {
+      document.getElementById('weather').innerHTML = "Gagal memuatkan cuaca.";
+      console.error(error);
+    });
+}
+
+// Geolocation API
+if (navigator.geolocation) {
+  navigator.geolocation.getCurrentPosition(position => {
+    getWeather(position.coords.latitude, position.coords.longitude);
+  }, () => {
+    document.getElementById('weather').innerHTML = "Tidak dapat lokasi.";
+  });
+} else {
+  document.getElementById('weather').innerHTML = "Browser tidak sokong Geolocation.";
+}
+</script>
+
+</body>
+</html>
